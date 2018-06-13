@@ -5,14 +5,14 @@
 [![Coverage](https://coveralls.io/repos/libwilliam/flask-compress/badge.svg)](https://coveralls.io/github/libwilliam/flask-compress)
 [![License](https://img.shields.io/pypi/l/flask-compress.svg)](https://github.com/libwilliam/flask-compress/blob/master/LICENSE.txt)
 
-Flask-Compress allows you to easily compress your [Flask](http://flask.pocoo.org/) application's responses with gzip.
+Flask-Compress allows you to easily compress your [Flask](http://flask.pocoo.org/) application's responses with gzip or brotli.
 
 The preferred solution is to have a server (like [Nginx](http://wiki.nginx.org/Main)) automatically compress the static files for you. If you don't have that option Flask-Compress will solve the problem for you.
 
 
 ## How it works
 
-Flask-Compress both adds the various headers required for a compressed response and gzips the response data. This makes serving gzip compressed static files extremely easy.
+Flask-Compress both adds the various headers required for a compressed response and compresses the response data. This makes serving compressed static files extremely easy.
 
 Internally, every time a request is made the extension will check if it matches one of the compressible MIME types and will automatically attach the appropriate headers.
 
@@ -40,7 +40,7 @@ $ easy_install flask-compress
 
 ## Using Flask-Compress
 
-Flask-Compress is incredibly simple to use. In order to start gzip'ing your Flask application's assets, the first thing to do is let Flask-Compress know about your [`flask.Flask`](http://flask.pocoo.org/docs/latest/api/#flask.Flask) application object.
+Flask-Compress is incredibly simple to use. In order to start compressing your Flask application's assets, the first thing to do is let Flask-Compress know about your [`flask.Flask`](http://flask.pocoo.org/docs/latest/api/#flask.Flask) application object.
 
 ```python
 from flask import Flask
@@ -64,7 +64,7 @@ def start_app():
     return app
 ```
 
-In terms of automatically compressing your assets using gzip, passing your [`flask.Flask`](http://flask.pocoo.org/docs/latest/api/#flask.Flask) object to the `flask_compress.Compress` object is all that needs to be done.
+In terms of automatically compressing your assets, passing your [`flask.Flask`](http://flask.pocoo.org/docs/latest/api/#flask.Flask) object to the `flask_compress.Compress` object is all that needs to be done.
 
 
 ## Options
@@ -74,8 +74,11 @@ Within your Flask application's settings you can provide the following settings 
 | Option | Description | Default |
 | ------ | ----------- | ------- |
 | `COMPRESS_MIMETYPES` | Set the list of mimetypes to compress here. | `[`<br>`'text/html',`<br>`'text/css',`<br>`'text/xml',`<br>`'application/json',`<br>`'application/javascript'`<br>`]` |
-| `COMPRESS_LEVEL` | Specifies the gzip compression level. | `6` |
+| `COMPRESS_LEVEL` | Specifies the compression level. Allowed values are 1-11. | `6` |
 | `COMPRESS_MIN_SIZE` | Specifies the minimum file size threshold for compressing files. | `500` |
-| `COMPRESS_CACHE_KEY` | Specifies the cache key method for lookup/storage of response data. | `None` |
 | `COMPRESS_CACHE_BACKEND` | Specified the backend for storing the cached response data. | `None` |
 | `COMPRESS_REGISTER` | Specifies if compression should be automatically registered. | `True` |
+| `ENABLE_BROTLI` | Specifies if Brotli compression should be enabled. If both brotli and gzip are enabled and supported by a browser, brotli will be used. | `True` |
+| `ENABLE_GZIP` | Specifies if gzip compression should be enabled. | `True` |
+| `BROTLI_COMPRESS_CACHE_KEY` | Specifies the cache key method for lookup/storage of response data with brotli. | `None` |
+| `GZIP_COMPRESS_CACHE_KEY` | Specifies the cache key method for lookup/storage of response data with gzip. | `None` |
