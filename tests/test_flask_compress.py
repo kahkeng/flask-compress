@@ -3,7 +3,7 @@ import os
 
 from flask import Flask, render_template
 
-from flask_compress import Compress
+from flask_compress import Compress, DictCache
 
 
 class DefaultsTest(unittest.TestCase):
@@ -82,7 +82,7 @@ class UrlTests(unittest.TestCase):
             response = self.client_get('/large/', compress_type)
             response6_size = len(response.data)
 
-            self.assertGreater(response1_size, response6_size)
+            self.assertTrue(response1_size > response6_size)
 
     def test_brotli_better(self):
         """ Tests that Brotli compresses more than gzip. """
@@ -97,7 +97,7 @@ class UrlTests(unittest.TestCase):
             response = self.client_get('/large/', 'brotlin')
             response_brotlin_size = len(response.data)
 
-            self.assertGreater(response_gzip_size, response_brotlin_size)
+            self.assertTrue(response_gzip_size > response_brotlin_size)
 
     def test_compress_min_size(self):
         """ Tests COMPRESS_MIN_SIZE correctly affects response data. """
@@ -106,17 +106,17 @@ class UrlTests(unittest.TestCase):
             self.assertEqual(self.small_size, len(response.data))
 
             response = self.client_get('/large/', compress_type)
-            self.assertGreater(self.large_size, len(response.data))
+            self.assertTrue(self.large_size > len(response.data))
 
     def test_mimetype_mismatch(self):
         """ Tests if mimetype not in COMPRESS_MIMETYPES. """
-        for compress_type in ('gzip', 'brotli'):
+        for compress_type in ('gzip', 'brotli', '*'):
             response = self.client_get('/static/1.png', compress_type)
             self.assertEqual(response.mimetype, 'image/png')
 
     def test_content_length_options(self):
         client = self.app.test_client()
-        for compress_type in ('gzip', 'brotli'):
+        for compress_type in ('gzip', 'brotli', '*'):
             headers = [('Accept-Encoding', compress_type)]
             response = client.options('/small/', headers=headers)
             self.assertEqual(response.status_code, 200)
@@ -128,6 +128,51 @@ class UrlTests(unittest.TestCase):
                 max(Compress.GZIP, Compress.BROTLI) + 1)
         self.assertEqual(Compress.CONTENT_ENCODINGS[Compress.GZIP], 'gzip')
         self.assertEqual(Compress.CONTENT_ENCODINGS[Compress.BROTLI], 'brotli')
+
+
+class CacheTests(unittest.TestCase):
+    def setUp(self):
+        self.app = Flask(__name__)
+        self.app.testing = True
+        self.cache = DictCache()
+        self.app.config['COMPRESS_CACHE_BACKEND'] = lambda: self.cache
+        def get_cache_key(response):
+            """Computes the cache key."""
+            # This isn't a realistic cache key function. Real ones would set the
+            # key based on the parameter.
+            return 'cache-key'
+        self.app.config['BROTLI_COMPRESS_CACHE_KEY'] = get_cache_key
+
+        small_path = os.path.join(os.getcwd(), 'tests', 'templates',
+                                  'small.html')
+
+        self.small_size = os.path.getsize(small_path) - 1
+
+        Compress(self.app)
+
+        @self.app.route('/large/')
+        def large():
+            return render_template('large.html')
+
+    def client_get(self, ufs, encoding):
+        client = self.app.test_client()
+        response = client.get(ufs, headers=[('Accept-Encoding', encoding)])
+        self.assertEqual(response.status_code, 200)
+        return response
+
+    def test_cache(self):
+        """Test the caching mechanism."""
+        compress_type = 'brotli'
+        # To start, there should be nothing
+        self.assertEqual(len(self.cache.data), 0)
+        # After the first time, there should be one entry
+        original_response = self.client_get('/large/', compress_type)
+        self.assertEqual(len(self.cache.data), 1)
+        # And every subsequent time
+        response = self.client_get('/large/', compress_type)
+        self.assertEqual(id(response.data), id(original_response.data))
+        self.assertEqual(len(self.cache.data), 1)
+
 
 if __name__ == '__main__':
     unittest.main()

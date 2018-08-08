@@ -76,8 +76,8 @@ class Compress(object):
             ('COMPRESS_MIN_SIZE', 500),
             ('ENABLE_GZIP', True),
             ('ENABLE_BROTLI', True),
-            ('GZIP_COMPRESS_CACHE_KEY', 'gzip'),
-            ('BROTLI_COMPRESS_CACHE_KEY', 'brotli'),
+            ('GZIP_COMPRESS_CACHE_KEY', None),
+            ('BROTLI_COMPRESS_CACHE_KEY', None),
             ('COMPRESS_CACHE_BACKEND', None),
             ('COMPRESS_REGISTER', True),
         ]
@@ -87,8 +87,8 @@ class Compress(object):
 
         backend = app.config['COMPRESS_CACHE_BACKEND']
         self._cache = backend() if backend else None
-        self._brotli_cache_key = app.config['GZIP_COMPRESS_CACHE_KEY']
-        self._gzip_cache_key = app.config['BROTLI_COMPRESS_CACHE_KEY']
+        self._gzip_cache_key = app.config['GZIP_COMPRESS_CACHE_KEY']
+        self._brotli_cache_key = app.config['BROTLI_COMPRESS_CACHE_KEY']
         self._cache_keys = (self._brotli_cache_key, self._gzip_cache_key)
 
         if (app.config['COMPRESS_REGISTER'] and
@@ -119,7 +119,7 @@ class Compress(object):
 
         response.direct_passthrough = False
 
-        if self._cache:
+        if self._cache is not None:
             key = self._cache_keys[encoding](response)
             compressed_content = (
                 self._cache.get(key) or
