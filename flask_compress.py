@@ -1,4 +1,3 @@
-
 # Authors: William Fagan
 # Copyright (c) 2013-2017 William Fagan
 # License: The MIT License (MIT)
@@ -50,7 +49,7 @@ class Compress(object):
     """
     BROTLI = 0
     GZIP = 1
-    CONTENT_ENCODINGS = ('brotli', 'gzip')
+    CONTENT_ENCODINGS = ('br', 'gzip')
     TEXT_TYPES = set(('text/html', 'text/css', 'text/xml', 'application/json',
                       'application/javascript'))
 
@@ -102,14 +101,14 @@ class Compress(object):
 
         if (response.mimetype not in app.config['COMPRESS_MIMETYPES'] or
             not 200 <= response.status_code < 300 or
-            response.content_length is None or
-            response.content_length < app.config['COMPRESS_MIN_SIZE'] or
+            (response.content_length is not None and
+            response.content_length < app.config['COMPRESS_MIN_SIZE']) or
             'Content-Encoding' in response.headers):
             return response
 
         encoding = None
         # Default to Brotli if both are available
-        if app.config['ENABLE_BROTLI'] and 'brotli' in accept_encoding.lower():
+        if app.config['ENABLE_BROTLI'] and 'br' in accept_encoding.lower():
             encoding = self.BROTLI
         elif app.config['ENABLE_GZIP'] and 'gzip' in accept_encoding.lower():
             encoding = self.GZIP
